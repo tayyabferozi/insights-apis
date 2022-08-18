@@ -1,0 +1,83 @@
+const axios = require("axios");
+const NodeCache = require("node-cache");
+
+// cache store
+
+const cache = new NodeCache({ stdTTL: 15 });
+
+// Re-usable function which returns a promise returning the data from the API
+
+const getTransactions = () => {
+  // If cache is there, return it!
+  if (cache.has("API_RES")) {
+    return { data: cache.get("API_RES") };
+  }
+  // else call the API
+  return axios.get(process.env.API_HOST + "/transactions");
+};
+
+exports.getDateGroupedData = async (req, res) => {
+  try {
+    const { data } = await getTransactions();
+
+    const grouped = {};
+
+    cache.set("API_RES", data);
+
+    data.forEach((el) => {
+      const date = new Date(el.paymentDate).toLocaleDateString();
+      if (grouped.hasOwnProperty(date)) {
+        grouped[date].totalNum += 1;
+        grouped[date].totalValue += el.amount;
+        grouped[date].averageValue =
+          grouped[date].totalValue / grouped[date].totalNum;
+      } else {
+        grouped[date] = {
+          totalNum: 1,
+          totalValue: el.amount,
+          averageValue: el.amount,
+        };
+      }
+    });
+
+    res.json({ success: true, grouped });
+  } catch (err) {
+    console.log(err);
+    res
+      .status(500)
+      .json({ success: false, msg: "Uh Oh! Something went wrong!" });
+  }
+};
+
+exports.getCategoryGroupedData = async (req, res) => {
+  try {
+    const { data } = await getTransactions();
+
+    const grouped = {};
+
+    cache.set("API_RES", data);
+
+    data.forEach((el) => {
+      const categoryName = el.category;
+      if (grouped.hasOwnProperty(categoryName)) {
+        grouped[categoryName].totalNum += 1;
+        grouped[categoryName].totalValue += el.amount;
+        grouped[categoryName].averageValue =
+          grouped[categoryName].totalValue / grouped[categoryName].totalNum;
+      } else {
+        grouped[categoryName] = {
+          totalNum: 1,
+          totalValue: el.amount,
+          averageValue: el.amount,
+        };
+      }
+    });
+
+    res.json({ success: true, grouped });
+  } catch (err) {
+    console.log(err);
+    res
+      .status(500)
+      .json({ success: false, msg: "Uh Oh! Something went wrong!" });
+  }
+};
