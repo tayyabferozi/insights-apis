@@ -31,7 +31,7 @@ exports.getDateGroupedData = async (req, res) => {
 
     cache.set("API_RES", data);
 
-    data.forEach((el) => {
+    data.reverse().forEach((el) => {
       const date = new Date(el.paymentDate).toLocaleDateString();
       if (grouped.hasOwnProperty(date)) {
         grouped[date].totalNum += 1;
