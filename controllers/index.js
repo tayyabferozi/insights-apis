@@ -30,7 +30,7 @@ exports.getDateGroupedData = async (req, res) => {
 
     cache.set("API_RES", data);
 
-    const grouped = data.reduce((acc, el) => {
+    const grouped = data.reverse().reduce((acc, el) => {
       const date = new Date(el.paymentDate).toLocaleDateString();
       if (!acc[date]) {
         acc[date] = {
