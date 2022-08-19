@@ -3,7 +3,7 @@ var expect = require("chai").expect;
 
 const app = require("../app");
 
-describe("Insight APIs", function () {
+describe("Category insights API", function () {
   it("should send back a JSON array with proper calculated insight objects", function (done) {
     request(app)
       .get("/api/insights/categories")
@@ -31,7 +31,9 @@ describe("Insight APIs", function () {
         done();
       });
   });
+});
 
+describe("Cashflow insights API", function () {
   it("should send back a JSON array with proper calculated insight objects", function (done) {
     request(app)
       .get("/api/insights/cashflow")

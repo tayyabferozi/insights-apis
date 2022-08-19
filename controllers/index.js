@@ -1,5 +1,6 @@
 const axios = require("axios");
 const NodeCache = require("node-cache");
+
 const data = require("../mock-data");
 
 // cache store
@@ -27,25 +28,31 @@ exports.getDateGroupedData = async (req, res) => {
   try {
     const { data } = await getTransactions();
 
-    const grouped = {};
-
     cache.set("API_RES", data);
 
-    data.forEach((el) => {
+    const grouped = data.reduce((acc, el) => {
       const date = new Date(el.paymentDate).toLocaleDateString();
-      if (grouped.hasOwnProperty(date)) {
-        grouped[date].totalNum += 1;
-        grouped[date].totalValue += el.amount;
-        grouped[date].averageValue =
-          grouped[date].totalValue / grouped[date].totalNum;
-      } else {
-        grouped[date] = {
-          totalNum: 1,
-          totalValue: el.amount,
-          averageValue: el.amount,
+      if (!acc[date]) {
+        acc[date] = {
+          totalNum: 0,
+          totalValue: 0,
+          averageValue: 0,
         };
       }
-    });
+
+      const newCount = acc[date].totalNum + 1;
+      const newTotal = acc[date].totalValue + el.amount;
+      const newAvg = newTotal / newCount;
+
+      return {
+        ...acc,
+        [date]: {
+          totalNum: newCount,
+          totalValue: newTotal,
+          averageValue: newAvg,
+        },
+      };
+    }, {});
 
     res.json({ success: true, grouped });
   } catch (err) {
@@ -60,25 +67,31 @@ exports.getCategoryGroupedData = async (req, res) => {
   try {
     const { data } = await getTransactions();
 
-    const grouped = {};
-
     cache.set("API_RES", data);
 
-    data.forEach((el) => {
+    const grouped = data.reduce((acc, el) => {
       const categoryName = el.category;
-      if (grouped.hasOwnProperty(categoryName)) {
-        grouped[categoryName].totalNum += 1;
-        grouped[categoryName].totalValue += el.amount;
-        grouped[categoryName].averageValue =
-          grouped[categoryName].totalValue / grouped[categoryName].totalNum;
-      } else {
-        grouped[categoryName] = {
-          totalNum: 1,
-          totalValue: el.amount,
-          averageValue: el.amount,
+      if (!acc[categoryName]) {
+        acc[categoryName] = {
+          totalNum: 0,
+          totalValue: 0,
+          averageValue: 0,
         };
       }
-    });
+
+      const newCount = acc[categoryName].totalNum + 1;
+      const newTotal = acc[categoryName].totalValue + el.amount;
+      const newAvg = newTotal / newCount;
+
+      return {
+        ...acc,
+        [categoryName]: {
+          totalNum: newCount,
+          totalValue: newTotal,
+          averageValue: newAvg,
+        },
+      };
+    }, {});
 
     res.json({ success: true, grouped });
   } catch (err) {
