@@ -1,11 +1,7 @@
 const axios = require("axios");
-const NodeCache = require("node-cache");
+const fs = require("fs");
 
 const data = require("../mock-data");
-
-// cache store
-
-const cache = new NodeCache({ stdTTL: 15 }); // refreshes every 15 seconds
 
 // Re-usable function which returns a promise returning the data from the API
 
@@ -15,9 +11,22 @@ const getTransactions = () => {
     return data;
   }
   // If cache is there, return it!
-  if (cache.has("API_RES")) {
-    return { data: cache.get("API_RES") };
+
+  let cacheStorage;
+  if (fs.existsSync("./cache.json")) {
+    cacheStorage = fs.readFileSync("./cache.json", {
+      encoding: "utf8",
+      flag: "r",
+    });
+
+    cacheStorage = JSON.parse(cacheStorage);
+
+    // If less than 15 seconds have passed since the file was writter
+    if ((Date.now() - new Date(cacheStorage.time).getTime()) / 1000 < 15) {
+      return cacheStorage;
+    }
   }
+
   // else call the API
   return axios.get(process.env.API_HOST + "/transactions");
 };
@@ -28,7 +37,10 @@ exports.getDateGroupedData = async (req, res) => {
   try {
     const { data } = await getTransactions();
 
-    cache.set("API_RES", data);
+    fs.writeFileSync(
+      "./cache.json",
+      JSON.stringify({ data, time: new Date() })
+    );
 
     const grouped = data.reverse().reduce((acc, el) => {
       const date = new Date(el.paymentDate).toLocaleDateString();
@@ -67,7 +79,10 @@ exports.getCategoryGroupedData = async (req, res) => {
   try {
     const { data } = await getTransactions();
 
-    cache.set("API_RES", data);
+    fs.writeFileSync(
+      "./cache.json",
+      JSON.stringify({ data, time: new Date() })
+    );
 
     const grouped = data.reduce((acc, el) => {
       const categoryName = el.category;
